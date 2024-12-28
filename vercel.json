@@ -2,6 +2,9 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "engines": {
+    "node": "18.x"
+  },
   "functions": {
     "api/**/*": {
       "runtime": "@vercel/node@3.0.0"

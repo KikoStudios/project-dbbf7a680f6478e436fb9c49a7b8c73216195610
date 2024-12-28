@@ -1,11 +1,14 @@
 import { put, get, del } from '@vercel/blob';
 import { GameState } from '../types';
 
+const token = process.env.BLOB_READ_WRITE_TOKEN;
+
 export async function saveGameState(gameCode: string, state: GameState): Promise<void> {
   try {
     const blob = await put(`games/${gameCode}.json`, JSON.stringify(state), {
       access: 'public',
-      addRandomSuffix: false
+      addRandomSuffix: false,
+      token
     });
     console.log('Game state saved to blob:', blob.url);
   } catch (error) {
@@ -19,7 +22,7 @@ export async function saveGameState(gameCode: string, state: GameState): Promise
 
 export async function getGameState(gameCode: string): Promise<GameState | null> {
   try {
-    const response = await get(`games/${gameCode}.json`);
+    const response = await get(`games/${gameCode}.json`, { token });
     if (!response) return null;
     
     const text = await response.text();
@@ -37,7 +40,7 @@ export async function getGameState(gameCode: string): Promise<GameState | null> 
 
 export async function deleteGameState(gameCode: string): Promise<void> {
   try {
-    await del(`games/${gameCode}.json`);
+    await del(`games/${gameCode}.json`, { token });
   } catch (error) {
     console.error('Error deleting game state:', error);
     // Fallback to localStorage for development

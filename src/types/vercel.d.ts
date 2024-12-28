@@ -1,8 +1,17 @@
 declare module '@vercel/blob' {
-  export interface BlobResponse {
-    url: string;
-    text(): Promise<string>;
-    json(): Promise<any>;
+  export class BlobServiceClient {
+    static fromConnectionString(connectionString: string): BlobServiceClient;
+    getContainerClient(containerName: string): ContainerClient;
+  }
+
+  export class ContainerClient {
+    getBlobClient(blobName: string): BlobClient;
+  }
+
+  export class BlobClient {
+    download(): Promise<{
+      text(): Promise<string>;
+    }>;
   }
 
   export function put(
@@ -15,11 +24,6 @@ declare module '@vercel/blob' {
       contentType?: string;
     }
   ): Promise<{ url: string }>;
-
-  export function get(
-    pathname: string,
-    options?: { token?: string }
-  ): Promise<BlobResponse | null>;
 
   export function del(
     pathname: string,

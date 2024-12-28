@@ -1,4 +1,4 @@
-import { put, get, del } from '@vercel/blob';
+import { put, del } from '@vercel/blob';
 import { GameState } from '../types';
 
 export async function saveGameState(gameCode: string, state: GameState): Promise<void> {
@@ -15,13 +15,23 @@ export async function saveGameState(gameCode: string, state: GameState): Promise
     if (process.env.NODE_ENV === 'development') {
       localStorage.setItem(`game_${gameCode}`, JSON.stringify(state));
     }
+    throw error;
   }
 }
 
 export async function getGameState(gameCode: string): Promise<GameState | null> {
   try {
-    const response = await fetch(`/api/blob/${gameCode}`);
+    const response = await fetch(`/api/blob/${gameCode}`, {
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
+    
     if (!response.ok) {
+      const error = await response.json();
+      console.error('API Error:', error);
+      
       if (process.env.NODE_ENV === 'development') {
         const state = localStorage.getItem(`game_${gameCode}`);
         return state ? JSON.parse(state) : null;
@@ -29,8 +39,7 @@ export async function getGameState(gameCode: string): Promise<GameState | null> 
       return null;
     }
     
-    const data = await response.json();
-    return data;
+    return await response.json();
   } catch (error) {
     console.error('Error getting game state:', error);
     if (process.env.NODE_ENV === 'development') {
@@ -51,5 +60,6 @@ export async function deleteGameState(gameCode: string): Promise<void> {
     if (process.env.NODE_ENV === 'development') {
       localStorage.removeItem(`game_${gameCode}`);
     }
+    throw error;
   }
 } 

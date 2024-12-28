@@ -1,16 +1,17 @@
-import { put, get, del } from '@vercel/blob';
+import { BlobServiceClient } from '@vercel/blob';
 import { GameState } from '../types';
 
-const token = process.env.BLOB_READ_WRITE_TOKEN;
+const token = import.meta.env.VITE_BLOB_READ_WRITE_TOKEN;
+const client = BlobServiceClient.fromConnectionString(token || '');
 
 export async function saveGameState(gameCode: string, state: GameState): Promise<void> {
   try {
-    const blob = await put(`games/${gameCode}.json`, JSON.stringify(state), {
+    const containerClient = client.getContainerClient('games');
+    const blobClient = containerClient.getBlobClient(`${gameCode}.json`);
+    await blobClient.upload(JSON.stringify(state), {
       access: 'public',
-      addRandomSuffix: false,
-      token
+      addRandomSuffix: false
     });
-    console.log('Game state saved to blob:', blob.url);
   } catch (error) {
     console.error('Error saving game state:', error);
     // Fallback to localStorage for development
@@ -22,7 +23,10 @@ export async function saveGameState(gameCode: string, state: GameState): Promise
 
 export async function getGameState(gameCode: string): Promise<GameState | null> {
   try {
-    const response = await get(`games/${gameCode}.json`, { token });
+    const containerClient = client.getContainerClient('games');
+    const blobClient = containerClient.getBlobClient(`${gameCode}.json`);
+    const response = await blobClient.download();
+    
     if (!response) return null;
     
     const text = await response.text();
@@ -40,7 +44,9 @@ export async function getGameState(gameCode: string): Promise<GameState | null> 
 
 export async function deleteGameState(gameCode: string): Promise<void> {
   try {
-    await del(`games/${gameCode}.json`, { token });
+    const containerClient = client.getContainerClient('games');
+    const blobClient = containerClient.getBlobClient(`${gameCode}.json`);
+    await blobClient.delete();
   } catch (error) {
     console.error('Error deleting game state:', error);
     // Fallback to localStorage for development

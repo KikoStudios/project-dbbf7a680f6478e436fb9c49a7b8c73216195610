@@ -12,7 +12,7 @@ export default async function handler(
     }
 
     const blob = await get(`games/${gameCode}.json`, {
-      token: process.env.VITE_BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN
+      token: process.env.VITE_BLOB_READ_WRITE_TOKEN
     });
 
     if (!blob) {

@@ -1,16 +1,14 @@
-import { BlobServiceClient } from '@vercel/blob';
+import { put, list, del } from '@vercel/blob';
 import { GameState } from '../types';
 
 const token = import.meta.env.VITE_BLOB_READ_WRITE_TOKEN;
-const client = BlobServiceClient.fromConnectionString(token || '');
 
 export async function saveGameState(gameCode: string, state: GameState): Promise<void> {
   try {
-    const containerClient = client.getContainerClient('games');
-    const blobClient = containerClient.getBlobClient(`${gameCode}.json`);
-    await blobClient.upload(JSON.stringify(state), {
+    await put(`games/${gameCode}.json`, JSON.stringify(state), {
       access: 'public',
-      addRandomSuffix: false
+      addRandomSuffix: false,
+      token
     });
   } catch (error) {
     console.error('Error saving game state:', error);
@@ -23,11 +21,11 @@ export async function saveGameState(gameCode: string, state: GameState): Promise
 
 export async function getGameState(gameCode: string): Promise<GameState | null> {
   try {
-    const containerClient = client.getContainerClient('games');
-    const blobClient = containerClient.getBlobClient(`${gameCode}.json`);
-    const response = await blobClient.download();
+    const { blobs } = await list({ prefix: `games/${gameCode}.json`, token });
+    if (!blobs.length) return null;
     
-    if (!response) return null;
+    const response = await fetch(blobs[0].url);
+    if (!response.ok) return null;
     
     const text = await response.text();
     return JSON.parse(text);
@@ -44,9 +42,7 @@ export async function getGameState(gameCode: string): Promise<GameState | null> 
 
 export async function deleteGameState(gameCode: string): Promise<void> {
   try {
-    const containerClient = client.getContainerClient('games');
-    const blobClient = containerClient.getBlobClient(`${gameCode}.json`);
-    await blobClient.delete();
+    await del(`games/${gameCode}.json`, { token });
   } catch (error) {
     console.error('Error deleting game state:', error);
     // Fallback to localStorage for development
